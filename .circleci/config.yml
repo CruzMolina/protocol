@@ -67,9 +67,18 @@ jobs:
             cd packages/financial-templates-lib
             echo $(circleci tests glob "test/**/*.js")
             circleci tests glob "test/**/*.js" | circleci tests split > /tmp/test-files
-            yarn hardhat test ./$(cat /tmp/test-files)
+            yarn hardhat test ./$(cat /tmp/test-files
+  test-financial-templates-lib-truffle:
+    docker:
+      - image: circleci/node:lts
+    working_directory: ~/protocol
+    resource_class: medium+
+    parallelism: 10
+    steps:
+      - restore_cache:
+          key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
       - run:
-          name: Run tests truffle
+          name: Run tests
           command: |
             ./ci/truffle_workaround.sh
             pwd
@@ -77,6 +86,7 @@ jobs:
             echo $(circleci tests glob "test-truffle/**/*.js")
             circleci tests glob "test-truffle/**/*.js" | circleci tests split > /tmp/test-truffle-files
             yarn truffle test ./$(cat /tmp/test-truffle-files)
+
   test-liquidator:
     docker:
       - image: circleci/node:lts
@@ -191,6 +201,9 @@ workflows:
           requires:
             - checkout_and_install
       - test-financial-templates-lib:
+          requires:
+            - build
+      - test-financial-templates-lib-truffle:
           requires:
             - build
       - test-liquidator:
